@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TECHSCAPE</title>
+    <link rel="stylesheet" href="static/styles.css">
+	<link rel="icon" type="image/png" href="static/favicon.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TECHSCAPE.ORG</h1>
+            <span id="toggle-mode" class="mode-icon">☀️</span>
+        </header>
+        <main>
+            <input type="text" id="search-query" placeholder="Search messages..." class="search-bar">
+            <ul id="results"></ul>
+            <button id="checked-messages-button" class="btn" onclick="goToCheckedMessages()">Checked Messages</button>
+            <button class="btn" onclick="logout()">Logout</button>
+        </main>
+        <footer>
+            <div class="footer-section">
+                <h2>Contacts</h2>
+                <div class="social-media-icons">
+                    <a href="https://www.instagram.com/tech_scape_?igsh=YWUyMXdmN3FyOHh5" target="_blank">
+                        <img src="static/instagram.jpg" alt="Instagram">
+                    </a>
+                    <a href="https://wa.me/254790522488" target="_blank">
+                        <img src="static/watapp.jpg" alt="WhatsApp">
+                    </a>
+                    <a href="https://x.com/_trenchtech?t=bcZ7G54nmuBB_K0cigPIxA&s=09" target="_blank">
+                        <img src="static/x.jpg" alt="X (formerly Twitter)">
+                    </a>
+					 </a>
+					<a href="mailto:trenchtechnology17@gmail.com?subject=Techscape%20Label&body=This%20email%20is%20intended%20to%20be%20labeled%20as%20Techscape.">
+                        <img src="static/mail.jpg" alt="Email Us">
+                    </a>
+					<a href="tel:+254790522488">
+                        <img src="static/call.jpg" alt="Call Us">
+						</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h2>Mission Statement</h2>
+                <p class="mission-statement">Explore the world of smart home devices and services. Discover the latest tech innovations and insights into futuristic life.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const userRole = "{{ role }}";  // Role passed from the backend
+
+        async function fetchMessages() {
+            const response = await fetch('/messages_from_MPESA');
+            if (response.ok) {
+                const results = await response.json();
+                return results;
+            } else {
+                console.error('Failed to fetch messages:', response.statusText);
+            }
+        }
+
+        function displayMessage(sender, content, timestamp, id) {
+            const resultsContainer = document.getElementById('results');
+            const li = document.createElement('li');
+            const words = content.split(' ').slice(0, 12).join(' ') + (content.split(' ').length > 12 ? '...' : '');
+
+            li.innerHTML = `
+                <strong>From:</strong> ${sender}<br>
+                <strong>Message:</strong> ${words}<br>
+                <strong>Timestamp:</strong> ${timestamp}<br>
+                <button onclick="checkMessage(${id}, this)" class="btn">Check</button>
+            `;
+            resultsContainer.appendChild(li);
+        }
+
+        async function checkMessage(id, button) {
+            const response = await fetch('/check_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const li = button.parentElement;
+                li.parentElement.removeChild(li);
+                alert(`confirm checked`);
+            } else {
+                console.error('Failed to check message:', response.statusText);
+            }
+        }
+
+        async function searchMessages() {
+            const query = document.getElementById('search-query').value.toLowerCase();
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            const response = await fetch(`/search_messages?query=${query}`);
+            if (response.ok) {
+                const data = await response.json();
+                data.results.forEach(message => {
+                    displayMessage(message[0], message[1], message[2], message[3]);
+                });
+            } else {
+                console.error('Failed to search messages:', response.statusText);
+            }
+        }
+
+        function goToCheckedMessages() {
+            window.location.href = '/checked_messages';
+        }
+
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        function toggleMode() {
+            document.body.classList.toggle('dark-mode');
+            const modeIcon = document.getElementById('toggle-mode');
+            modeIcon.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const messages = await fetchMessages();
+            if (messages) {
+                messages.forEach(message => {
+                    displayMessage(message[0], message[1], message[2], message[3]);
+                });
+            } else {
+                console.error('No messages to display.');
+            }
+
+            // Conditionally display the "Checked Messages" button based on the user's role
+            if (userRole === 'admin') {
+                document.getElementById('checked-messages-button').style.display = 'inline';
+            }
+
+            // Set up WebSocket connection
+            const socket = io();
+
+            socket.on('new_message', (message) => {
+                displayMessage(message.sender, message.content, message.timestamp, message.id);
+            });
+
+            // Toggle dark/light mode
+            document.getElementById('toggle-mode').addEventListener('click', toggleMode);
+        });
+
+        document.getElementById('search-query').addEventListener('input', searchMessages);
+    </script>
+</body>
+</html>

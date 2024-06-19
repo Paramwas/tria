@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checked Messages</title>
+	<style>
+     body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000;
+            margin: 20px 0;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 10px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-container label {
+            font-weight: bold;
+            color: #000;
+        }
+
+        .filter-container input[type="datetime-local"],
+        .filter-container input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .filter-container input[type="datetime-local"]:focus,
+        .filter-container input[type="text"]:focus {
+            border-color: #000;
+        }
+
+        .filter-container button {
+            padding: 10px 20px;
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .filter-container button:hover {
+            background-color: #333;
+        }
+
+        #results {
+            list-style: none;
+            padding: 0;
+            margin: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #results li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #results li:last-child {
+            border-bottom: none;
+        }
+
+        #results strong {
+            color: #000;
+        }
+
+        #total-amount {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            color: #000;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #000;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .footer-section {
+            margin-bottom: 20px;
+        }
+
+        .footer-section h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .social-media-icons img {
+            width: 30px;
+            height: 30px;
+            margin: 0 10px;
+            transition: transform 0.3s;
+        }
+
+        .social-media-icons img:hover {
+            transform: scale(1.1);
+        }
+    
+    
+    </style>
+</head>
+<body>
+    <h1>Checked Messages</h1>
+    <div class="filter-container">
+        <input type="text" id="checked-by-query" placeholder="Search by user...">
+        <label for="start-date">Start Date:</label>
+        <input type="datetime-local" id="start-date">
+        <label for="end-date">End Date:</label>
+        <input type="datetime-local" id="end-date">
+        <button onclick="filterMessagesByDate()">Filter by Date</button>
+    </div>
+    <ul id="results"></ul>
+    <div id="total-amount"></div>
+    <button onclick="goToMessages()">Messages</button>
+    <button onclick="logout()">Logout</button>
+    <footer>
+        <div class="footer-section">
+            <h2>Contacts</h2>
+            <div class="social-media-icons">
+                <a href="https://www.instagram.com/tech_scape_igsh=YWUyMXdmN3FyOHh5" target="_blank">
+                    <img src="static/instagram.jpg" alt="Instagram">
+                </a>
+                <a href="https://wa.me/254790522488" target="_blank">
+                    <img src="static/watapp.jpg" alt="WhatsApp">
+                </a>
+                <a href="https://x.com/_trenchtech?t=bcZ7G54nmuBB_K0cigPIxA&s=09" target="_blank">
+                    <img src="static/x.jpg" alt="X (formerly Twitter)">
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        async function fetchCheckedMessages() {
+            const response = await fetch('/checked_messages');
+            if (response.ok) {
+                const results = await response.json();
+                return results;
+            } else {
+                console.error('Failed to fetch checked messages:', response.statusText);
+            }
+        }
+
+        async function fetchCheckedMessagesByUser(query) {
+            const response = await fetch(`/checked_messages_by_user?checked_by=${query}`);
+            if (response.ok) {
+                const results = await response.json();
+                return results;
+            } else {
+                console.error('Failed to fetch messages:', response.statusText);
+            }
+        }
+
+        function displayMessage(sender, content, timestamp, id, checkedBy) {
+            const resultsContainer = document.getElementById('results');
+            const li = document.createElement('li');
+            const words = content.split(' ').slice(0, 12).join(' ') + (content.split(' ').length > 12 ? '...' : '');
+
+            li.innerHTML = `
+                <strong>From:</strong> ${sender}<br>
+                <strong>Message:</strong> ${words}<br>
+                <strong>Timestamp:</strong> ${timestamp}<br>
+                <strong>Checked By:</strong> ${checkedBy}<br>
+                <button onclick="uncheckMessage(${id}, this)">Uncheck</button>
+            `;
+            resultsContainer.appendChild(li);
+        }
+
+        async function uncheckMessage(id, button) {
+            const response = await fetch('/uncheck_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id })
+            });
+
+            if (response.ok) {
+                const li = button.parentElement;
+                li.parentElement.removeChild(li);
+            } else {
+                console.error('Failed to uncheck message:', response.statusText);
+            }
+        }
+
+        async function searchCheckedMessagesByUser() {
+            const query = document.getElementById('checked-by-query').value;
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            if (query) {
+                const results = await fetchCheckedMessagesByUser(query);
+                if (results && results.messages) {
+                    results.messages.forEach(message => {
+                        displayMessage(message[0], message[1], message[2], message[4], message[3]);
+                    });
+
+                    const totalAmountContainer = document.getElementById('total-amount');
+                    totalAmountContainer.innerHTML = `Total Amount: KSH ${results.total_amount.toFixed(2)}`;
+                } else {
+                    console.error('No messages to display.');
+                }
+            }
+        }
+
+        async function filterMessagesByDate() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const query = document.getElementById('checked-by-query').value;
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            if (startDate && endDate && query) {
+                const response = await fetch(`/checked_messages_by_user?checked_by=${query}&start_date=${startDate}&end_date=${endDate}`);
+                if (response.ok) {
+                    const results = await response.json();
+                    if (results && results.messages) {
+                        results.messages.forEach(message => {
+                            displayMessage(message[0], message[1], message[2], message[4], message[3]);
+                        });
+
+                        const totalAmountContainer = document.getElementById('total-amount');
+                        totalAmountContainer.innerHTML = `Total Amount: KSH ${results.total_amount.toFixed(2)}`;
+                    } else {
+                        console.error('No messages to display.');
+                    }
+                } else {
+                    console.error('Failed to filter messages:', response.statusText);
+                }
+            } else {
+                console.error('Please provide a start date, end date, and user.');
+            }
+        }
+
+        function goToMessages() {
+            window.location.href = '/';
+        }
+
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const messages = await fetchCheckedMessages();
+            if (messages) {
+                messages.forEach(message => {
+                    displayMessage(message[0], message[1], message[2], message[4], message[3]);
+                });
+            } else {
+                console.error('No messages to display.');
+            }
+        });
+
+        document.getElementById('checked-by-query').addEventListener('input', searchCheckedMessagesByUser);
+    </script>
+</body>
+</html>

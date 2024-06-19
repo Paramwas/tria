@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="static/styles.css">
+	<link rel="icon" type="image/png" href="static/favicon.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <header>
+            <h1>Login</h1>
+            <span id="toggle-mode" class="mode-icon">☀️</span>
+        </header>
+        <main>
+            <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+                <br>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                <br>
+                <button type="submit" class="btn">Login</button>
+                {% if error %}
+                    <p class="error">{{ error }}</p>
+                {% endif %}
+            </form>
+        </main>
+        <footer>
+            <div class="footer-section">
+                <h2>Contacts</h2>
+                <div class="social-media-icons">
+                    <a href="https://www.instagram.com/tech_scape_?igsh=YWUyMXdmN3FyOHh5" target="_blank">
+                        <img src="static/instagram.jpg" alt="Instagram">
+                    </a>
+                    <a href="https://wa.me/254790522488" target="_blank">
+                        <img src="static/watapp.jpg" alt="WhatsApp">
+                    </a>
+                    <a href="https://x.com/_trenchtech?t=bcZ7G54nmuBB_K0cigPIxA&s=09" target="_blank">
+                        <img src="static/x.jpg" alt="X (formerly Twitter)">
+                    </a>
+					 </a>
+					<a href="mailto:trenchtechnology17@gmail.com?subject=Techscape%20Label&body=This%20email%20is%20intended%20to%20be%20labeled%20as%20Techscape.">
+                        <img src="static/mail.jpg" alt="Email Us">
+                    </a>
+					<a href="tel:+254790522488">
+                        <img src="static/call.jpg" alt="Call Us">
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function toggleMode() {
+            document.body.classList.toggle('dark-mode');
+            const modeIcon = document.getElementById('toggle-mode');
+            modeIcon.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('toggle-mode').addEventListener('click', toggleMode);
+        });
+    </script>
+</body>
+</html>
