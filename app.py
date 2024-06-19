@@ -6,7 +6,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 
 # Database setup
 def init_db():
@@ -66,7 +66,6 @@ def login():
             return "Invalid credentials"
 
     return render_template('login.html')
-
 
 @app.route('/logout')
 def logout():
@@ -167,6 +166,7 @@ def check_message():
         total_checked_amount = cursor.fetchone()[0] or 0
 
     return jsonify({'status': 'success', 'total_checked_amount': total_checked_amount}), 200
+
 @app.route('/checked_messages_by_user')
 def checked_messages_by_user():
     if 'username' not in session:
@@ -207,8 +207,6 @@ def checked_messages_by_user():
             total_amount += amount
 
     return jsonify({'messages': messages, 'total_amount': total_amount})
-
-
 
 @app.route('/uncheck_message', methods=['POST'])
 def uncheck_message():
